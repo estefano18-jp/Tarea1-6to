@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- CDN para gestión de objetos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+
+    <!-- CDN para ML -->
+    <script src="https://cdn.jsdelivr.net/npm/ml5@0.12/dist/ml5.min.js"></script>
+</head>
+<body>
+    <div>Teachable Machine Image Model - p5.js and ml5.js</div>
+
+    <script type="text/javascript">
+    // Classifier Variable
+    let classifier;
+    // Model URL
+    let imageModelURL = "./models/";
+
+    // Video
+    let video;
+    let flippedVideo;
+    // To store the classification
+    let labels = []; // Array para las etiquetas y su confianza
+
+    // Load the model first
+    function preload() {
+        classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+    }
+
+    function setup() {
+        createCanvas(800, 600); // Tamaño del lienzo
+        // Crear el video
+        video = createCapture(VIDEO);
+        video.size(640, 480); // Tamaño del video
+        video.hide();
+
+        flippedVideo = ml5.flipImage(video);
+        // Empezar a clasificar
+        classifyVideo();
+    }
+
+    function draw() {
+        background(0);
+        // Centramos el video en el lienzo (horizontal y vertical)
+        let videoX = (width - video.width) / 2; // Centrado horizontal
+        let videoY = (height - video.height) / 2; // Centrado vertical
+        image(flippedVideo, videoX, videoY);
+
+        // Dibuja las etiquetas y barras de confianza en la parte inferior
+        fill(255);
+        textSize(24); // Tamaño de texto más grande
+        textAlign(CENTER);
+
+        let yOffset = height - 40 - labels.length * 50; // Comienza a dibujar en la parte inferior
+        for (let i = 0; i < labels.length; i++) {
+            text(labels[i].label + ": " + nf(labels[i].confidence * 100, 2, 2) + "%", width / 2, yOffset); // Dibuja la etiqueta y la confianza
+            yOffset += 40;
+
+            // Dibuja la barra de confianza
+            fill(200);
+            rect(width / 4, yOffset, width / 2, 20); // Barra de fondo
+            fill(0, 255, 0); // Barra de confianza (verde)
+            let confidenceWidth = map(labels[i].confidence, 0, 1, 0, width / 2);
+            rect(width / 4, yOffset, confidenceWidth, 20); // Barra de progreso
+            yOffset += 30; // Espacio entre la barra de confianza y la siguiente etiqueta
+        }
+    }
+
+    // Obtener una predicción del video actual
+    function classifyVideo() {
+        flippedVideo = ml5.flipImage(video);
+        classifier.classify(flippedVideo, gotResult);
+    }
+
+    // Cuando obtenemos un resultado
+    function gotResult(error, results) {
+        // Si hay un error
+        if (error) {
+            console.error(error);
+            return;
+        }
+        // Los resultados están en un array ordenado por confianza.
+        labels = []; // Limpiamos las etiquetas previas
+        for (let i = 0; i < results.length && i < 3; i++) {
+            labels.push({label: results[i].label, confidence: results[i].confidence});
+        }
+        // Clasificar nuevamente
+        classifyVideo();
+    }
+    </script>
+
+</body>
+</html>
