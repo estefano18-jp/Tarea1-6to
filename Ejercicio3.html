@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detector de Manos</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+</head>
+<body>
+
+  <script>
+let modeloManos;
+let camara;
+let datosManos = [];
+let distanciaPinza = 0;
+
+function preload() {
+  modeloManos = ml5.handPose();
+}
+
+function setup() {
+  createCanvas(640, 480);
+  camara = createCapture(VIDEO);
+  camara.size(640, 480);
+  camara.hide();
+  modeloManos.detectStart(camara, detectarManos);
+}
+
+function draw() {
+  image(camara, 0, 0, width, height);
+
+  if (datosManos.length > 0) {
+    let dedo = datosManos[0].index_finger_tip;
+    let pulgar = datosManos[0].thumb_tip;
+
+    distanciaPinza = dist(dedo.x, dedo.y, pulgar.x, pulgar.y);
+
+    let tono;
+    let diametro;
+
+    if (distanciaPinza < 100) {
+      tono = 'red';   
+      diametro = 50;       
+    } else if (distanciaPinza >= 100 && distanciaPinza < 200) {
+      tono = 'orange';
+      diametro = 100;       
+    } else {
+      tono = 'yellow';  
+      diametro = 150;        
+    }
+
+    let posX = (dedo.x + pulgar.x) / 2;
+    let posY = (dedo.y + pulgar.y) / 2;
+
+    fill(tono);
+    stroke(255);
+    strokeWeight(3);
+    circle(posX, posY, diametro);
+  }
+}
+
+function detectarManos(resultado) {
+  datosManos = resultado;
+}
+  </script>
+
+</body>
+</html>
