@@ -13,6 +13,15 @@
 </head>
 <body>
     <div>Teachable Machine Image Model - p5.js and ml5.js</div>
+    
+    <div id="info-container">
+        <p><span id="dni">---</span> (<span id="dni-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="dni-bar"></div></div>
+        <p><span id="billetera">---</span> (<span id="billetera-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="billetera-bar"></div></div>
+        <p><span id="celular">---</span> (<span id="celular-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="celular-bar"></div></div>
+    </div>
 
     <script type="text/javascript">
     // Classifier Variable
@@ -24,74 +33,82 @@
     let video;
     let flippedVideo;
     // To store the classification
-    let labels = []; // Array para las etiquetas y su confianza
+    let labels = [];
 
-    // Load the model first
     function preload() {
         classifier = ml5.imageClassifier(imageModelURL + 'model.json');
     }
 
     function setup() {
-        createCanvas(800, 600); // Tamaño del lienzo
-        // Crear el video
+        createCanvas(800, 500).parent(document.body);
+        
         video = createCapture(VIDEO);
-        video.size(640, 480); // Tamaño del video
+        video.size(640, 400);
         video.hide();
 
         flippedVideo = ml5.flipImage(video);
-        // Empezar a clasificar
         classifyVideo();
     }
 
     function draw() {
         background(0);
-        // Centramos el video en el lienzo (horizontal y vertical)
-        let videoX = (width - video.width) / 2; // Centrado horizontal
-        let videoY = (height - video.height) / 2; // Centrado vertical
+        let videoX = (width - video.width) / 2;
+        let videoY = 20;
         image(flippedVideo, videoX, videoY);
-
-        // Dibuja las etiquetas y barras de confianza en la parte inferior
-        fill(255);
-        textSize(24); // Tamaño de texto más grande
-        textAlign(CENTER);
-
-        let yOffset = height - 40 - labels.length * 50; // Comienza a dibujar en la parte inferior
-        for (let i = 0; i < labels.length; i++) {
-            text(labels[i].label + ": " + nf(labels[i].confidence * 100, 2, 2) + "%", width / 2, yOffset); // Dibuja la etiqueta y la confianza
-            yOffset += 40;
-
-            // Dibuja la barra de confianza
-            fill(200);
-            rect(width / 4, yOffset, width / 2, 20); // Barra de fondo
-            fill(0, 255, 0); // Barra de confianza (verde)
-            let confidenceWidth = map(labels[i].confidence, 0, 1, 0, width / 2);
-            rect(width / 4, yOffset, confidenceWidth, 20); // Barra de progreso
-            yOffset += 30; // Espacio entre la barra de confianza y la siguiente etiqueta
-        }
     }
 
-    // Obtener una predicción del video actual
     function classifyVideo() {
         flippedVideo = ml5.flipImage(video);
         classifier.classify(flippedVideo, gotResult);
     }
 
-    // Cuando obtenemos un resultado
     function gotResult(error, results) {
-        // Si hay un error
         if (error) {
             console.error(error);
             return;
         }
-        // Los resultados están en un array ordenado por confianza.
-        labels = []; // Limpiamos las etiquetas previas
-        for (let i = 0; i < results.length && i < 3; i++) {
-            labels.push({label: results[i].label, confidence: results[i].confidence});
+        
+        if (results.length > 0) {
+            updateInfo("dni", results[0]);
+            updateInfo("billetera", results.length > 1 ? results[1] : null);
+            updateInfo("celular", results.length > 2 ? results[2] : null);
         }
-        // Clasificar nuevamente
+        
         classifyVideo();
+    }
+
+    function updateInfo(id, result) {
+        if (result) {
+            document.getElementById(id).textContent = result.label;
+            document.getElementById(id + "-confidence").textContent = (result.confidence * 100).toFixed(2) + "%";
+            document.getElementById(id + "-bar").style.width = (result.confidence * 100) + "%";
+        } else {
+            document.getElementById(id).textContent = "---";
+            document.getElementById(id + "-confidence").textContent = "0%";
+            document.getElementById(id + "-bar").style.width = "0%";
+        }
     }
     </script>
 
+    <style>
+        #info-container {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .confidence-bar {
+            width: 50%;
+            height: 10px;
+            background-color: #ccc;
+            margin: 5px auto;
+            position: relative;
+        }
+        .confidence-bar div {
+            height: 100%;
+            background-color: green;
+            width: 0%;
+        }
+    </style>
 </body>
 </html>
