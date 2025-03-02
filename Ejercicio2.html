@@ -1,114 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Teachable Machine - p5.js & ml5.js</title>
 
-    <!-- CDN para gestión de objetos -->
+    <!-- Librería p5.js para gestión de objetos gráficos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 
-    <!-- CDN para ML -->
+    <!-- Librería ml5.js para aprendizaje automático -->
     <script src="https://cdn.jsdelivr.net/npm/ml5@0.12/dist/ml5.min.js"></script>
-</head>
-<body>
-    <div>Teachable Machine Image Model - p5.js and ml5.js</div>
-    
-    <div id="info-container">
-        <p><span id="dni">---</span> (<span id="dni-confidence">0%</span>)</p>
-        <div class="confidence-bar"><div id="dni-bar"></div></div>
-        <p><span id="billetera">---</span> (<span id="billetera-confidence">0%</span>)</p>
-        <div class="confidence-bar"><div id="billetera-bar"></div></div>
-        <p><span id="celular">---</span> (<span id="celular-confidence">0%</span>)</p>
-        <div class="confidence-bar"><div id="celular-bar"></div></div>
-    </div>
-
-    <script type="text/javascript">
-    // Classifier Variable
-    let classifier;
-    // Model URL
-    let imageModelURL = "./models/";
-
-    // Video
-    let video;
-    let flippedVideo;
-    // To store the classification
-    let labels = [];
-
-    function preload() {
-        classifier = ml5.imageClassifier(imageModelURL + 'model.json');
-    }
-
-    function setup() {
-        createCanvas(800, 500).parent(document.body);
-        
-        video = createCapture(VIDEO);
-        video.size(640, 400);
-        video.hide();
-
-        flippedVideo = ml5.flipImage(video);
-        classifyVideo();
-    }
-
-    function draw() {
-        background(0);
-        let videoX = (width - video.width) / 2;
-        let videoY = 20;
-        image(flippedVideo, videoX, videoY);
-    }
-
-    function classifyVideo() {
-        flippedVideo = ml5.flipImage(video);
-        classifier.classify(flippedVideo, gotResult);
-    }
-
-    function gotResult(error, results) {
-        if (error) {
-            console.error(error);
-            return;
-        }
-        
-        if (results.length > 0) {
-            updateInfo("dni", results[0]);
-            updateInfo("billetera", results.length > 1 ? results[1] : null);
-            updateInfo("celular", results.length > 2 ? results[2] : null);
-        }
-        
-        classifyVideo();
-    }
-
-    function updateInfo(id, result) {
-        if (result) {
-            document.getElementById(id).textContent = result.label;
-            document.getElementById(id + "-confidence").textContent = (result.confidence * 100).toFixed(2) + "%";
-            document.getElementById(id + "-bar").style.width = (result.confidence * 100) + "%";
-        } else {
-            document.getElementById(id).textContent = "---";
-            document.getElementById(id + "-confidence").textContent = "0%";
-            document.getElementById(id + "-bar").style.width = "0%";
-        }
-    }
-    </script>
 
     <style>
-        #info-container {
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
             text-align: center;
+        }
+
+        #info-container {
             margin-top: 20px;
             font-size: 20px;
             font-weight: bold;
         }
+
         .confidence-bar {
             width: 50%;
             height: 10px;
             background-color: #ccc;
             margin: 5px auto;
             position: relative;
+            border-radius: 5px;
         }
+
         .confidence-bar div {
             height: 100%;
             background-color: green;
             width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
+</head>
+
+<body>
+    <h1>Teachable Machine Image Model</h1>
+
+    <div id="info-container">
+        <p><span id="dni">---</span> (<span id="dni-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="dni-bar"></div></div>
+
+        <p><span id="billetera">---</span> (<span id="billetera-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="billetera-bar"></div></div>
+
+        <p><span id="celular">---</span> (<span id="celular-confidence">0%</span>)</p>
+        <div class="confidence-bar"><div id="celular-bar"></div></div>
+    </div>
+
+    <script>
+        // Variables globales
+        let classifier;
+        let imageModelURL = "./models/"; // URL del modelo
+        let video;
+        let flippedVideo;
+
+        // Precargar el modelo de clasificación
+        function preload() {
+            classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+        }
+
+        // Configuración inicial del lienzo y captura de video
+        function setup() {
+            createCanvas(800, 500).parent(document.body);
+
+            video = createCapture(VIDEO);
+            video.size(640, 400);
+            video.hide();
+
+            flippedVideo = ml5.flipImage(video);
+            classifyVideo();
+        }
+
+        // Dibujar el video en el lienzo
+        function draw() {
+            background(0);
+            let videoX = (width - video.width) / 2;
+            let videoY = 20;
+            image(flippedVideo, videoX, videoY);
+        }
+
+        // Clasificar el video en tiempo real
+        function classifyVideo() {
+            flippedVideo = ml5.flipImage(video);
+            classifier.classify(flippedVideo, gotResult);
+        }
+
+        // Manejar los resultados de la clasificación
+        function gotResult(error, results) {
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            if (results.length > 0) {
+                updateInfo("dni", results[0]);
+                updateInfo("billetera", results.length > 1 ? results[1] : null);
+                updateInfo("celular", results.length > 2 ? results[2] : null);
+            }
+
+            classifyVideo(); // Continuar clasificando
+        }
+
+        // Actualizar la información de las etiquetas y barras de confianza
+        function updateInfo(id, result) {
+            if (result) {
+                document.getElementById(id).textContent = result.label;
+                document.getElementById(id + "-confidence").textContent = (result.confidence * 100).toFixed(2) + "%";
+                document.getElementById(id + "-bar").style.width = (result.confidence * 100) + "%";
+            } else {
+                document.getElementById(id).textContent = "---";
+                document.getElementById(id + "-confidence").textContent = "0%";
+                document.getElementById(id + "-bar").style.width = "0%";
+            }
+        }
+    </script>
 </body>
+
 </html>
